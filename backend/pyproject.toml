@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.16.1",
     "pyodbc>=5.3.0",
     "sqlalchemy>=2.1.6",
+    "sqlmodel>=0.0.48",
 ]
 
 [build-system]
