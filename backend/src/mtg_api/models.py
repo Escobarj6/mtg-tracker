@@ -3,6 +3,13 @@ from datetime import date
 from sqlalchemy import Unicode, UnicodeText
 from sqlmodel import Field, Relationship, SQLModel
 
+SQLModel.metadata.naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
 
 class Set(SQLModel, table=True):
     __tablename__ = "sets"
