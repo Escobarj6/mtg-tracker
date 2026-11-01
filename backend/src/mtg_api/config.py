@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,4 +15,6 @@ class Settings(BaseSettings):
     db_trust_server_certificate: bool = False
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
