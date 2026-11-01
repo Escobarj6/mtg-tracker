@@ -1,1 +1,1 @@
-
+"""MTG Tracker API."""
