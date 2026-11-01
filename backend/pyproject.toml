@@ -1,10 +1,10 @@
 [project]
 name = "mtg-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "ackend API for MTG Tracker: collection and Commander deck management."
 readme = "README.md"
 authors = [
-    { name = "escobarj", email = "escobarj6@southernct.edu" }
+    { name = "escobarj", email = "157618076+Escobarj6@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
@@ -13,9 +13,6 @@ dependencies = [
     "pyodbc>=5.3.0",
     "sqlalchemy>=2.1.6",
 ]
-
-[project.scripts]
-mtg-api = "mtg_api:main"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
