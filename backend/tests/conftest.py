@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+
 from mtg_api.main import app
 
 
