@@ -3,18 +3,19 @@
 A Magic: The Gathering collection tracker built on a modern Python and TypeScript stack:
 FastAPI, SQL Server, and Aurelia 2, deployed to Azure.
 
-> **Status:** early development. The backend API and database connection are working.
-> See the [roadmap](#roadmap) for what's next.
+> **Status:** early development. The backend API, database schema, migrations, tests,
+> and CI are in place. See the [roadmap](#roadmap) for what's next.
 
 ## Stack
 
-| Layer      | Technology                                          |
-|------------|-----------------------------------------------------|
-| API        | Python 3.13, FastAPI, SQLAlchemy, pyodbc            |
-| Database   | SQL Server 2025 (Docker locally, Azure SQL in cloud)|
-| Frontend   | Aurelia 2, TypeScript *(planned)*                   |
-| Tooling    | uv, Ruff, pytest, Docker                            |
-| Cloud      | Azure, defined as infrastructure as code *(planned)*|
+| Layer      | Technology                                             |
+|------------|--------------------------------------------------------|
+| API        | Python 3.13, FastAPI                                   |
+| Data       | SQLModel, SQLAlchemy, pyodbc, Alembic migrations       |
+| Database   | SQL Server 2025 (Docker locally, Azure SQL in cloud)   |
+| Frontend   | Aurelia 2, TypeScript *(planned)*                      |
+| Tooling    | uv, Ruff, pytest, Docker, GitHub Actions               |
+| Cloud      | Azure, defined as infrastructure as code *(planned)*   |
 
 ## Prerequisites
 
@@ -68,15 +69,16 @@ cp backend/.env.example backend/.env
 Edit `backend/.env` and set `MTG_DB_PASSWORD` to your `sa` password.
 `.env` is gitignored and must never be committed.
 
-### 4. Run the API
+### 4. Create the tables and run the API
 
 ```bash
 cd backend
 uv sync
+uv run alembic upgrade head
 uv run fastapi dev src/mtg_api/main.py
 ```
 
-- Health check: <http://127.0.0.1:8000/health> returns `{"status": "ok", "database": "ok"}`
+- Health check: <http://127.0.0.1:8000/health> returns `{"status": "ok", "database": "available"}`
 - Interactive API docs: <http://127.0.0.1:8000/docs>
 
 ## Configuration
@@ -84,38 +86,66 @@ uv run fastapi dev src/mtg_api/main.py
 Settings load from environment variables, with `backend/.env` as a local fallback.
 Real environment variables take priority.
 
-| Variable                          | Default     | Notes                                   |
-|-----------------------------------|-------------|-----------------------------------------|
-| `MTG_DB_PASSWORD`                 | *(required)*| App refuses to start without it         |
-| `MTG_DB_HOST`                     | `127.0.0.1` | IPv4 on purpose (see troubleshooting)   |
-| `MTG_DB_PORT`                     | `1433`      |                                         |
-| `MTG_DB_NAME`                     | `mtg`       |                                         |
-| `MTG_DB_USER`                     | `sa`        | Local development only                  |
-| `MTG_DB_TRUST_SERVER_CERTIFICATE` | `false`     | Set `true` locally for the self-signed container cert. Never in production. |
+| Variable                          | Default      | Notes                                   |
+|-----------------------------------|--------------|-----------------------------------------|
+| `MTG_DB_PASSWORD`                 | *(required)* | App refuses to start without it         |
+| `MTG_DB_HOST`                     | `127.0.0.1`  | IPv4 on purpose (see troubleshooting)   |
+| `MTG_DB_PORT`                     | `1433`       |                                         |
+| `MTG_DB_NAME`                     | `mtg`        |                                         |
+| `MTG_DB_USER`                     | `sa`         | Local development only                  |
+| `MTG_DB_TRUST_SERVER_CERTIFICATE` | `false`      | Set `true` locally for the self-signed container cert. Never in production. |
 
 ## Development workflow
 
 - Work on a branch (`feat/...`, `fix/...`, `docs/...`), never directly on `main`.
 - Before committing, from `backend/`:
-```bash
+  ```bash
   uv run ruff format .
   uv run ruff check .
-```
+  uv run pytest
+  ```
+- After changing models, generate a migration and **read it before applying**:
+  ```bash
+  uv run alembic revision --autogenerate -m "describe the change"
+  uv run alembic upgrade head
+  ```
+  Never edit a migration that has been applied or merged; write a new one instead.
 - Open a pull request with what changed, why, and how it was tested, then squash-merge.
+  CI must pass before `main` accepts the merge.
+
+## Tests
+
+From `backend/`:
+
+```bash
+uv run pytest -v
+```
+
+Tests swap the database for SQLite through FastAPI dependency overrides,
+so they run without SQL Server, `.env`, or network access.
 
 ## Project layout
 
 ```
 mtg-tracker/
+├── .github/workflows/ci.yml  # lint, format check, and tests on every PR
 ├── backend/
+│   ├── migrations/           # Alembic environment and migration scripts
 │   ├── src/mtg_api/
-│   │   ├── config.py     # settings loaded from environment
-│   │   ├── db.py         # SQLAlchemy engine and connection URL
-│   │   └── main.py       # FastAPI app and routes
-│   ├── .env.example      # template for local configuration
-│   ├── pyproject.toml    # project metadata and dependencies
-│   └── uv.lock           # exact, reproducible dependency versions
-└── README.md
+│   │   ├── config.py         # settings loaded from environment
+│   │   ├── db.py             # SQLAlchemy engine and connection URL
+│   │   ├── main.py           # FastAPI app; includes the routers
+│   │   ├── models.py         # SQLModel tables
+│   │   └── routers/          # API endpoints, one module per area
+│   ├── tests/                # pytest suite
+│   ├── .env.example          # template for local configuration
+│   ├── alembic.ini           # Alembic settings (no credentials)
+│   ├── pyproject.toml        # project metadata, dependencies, Ruff config
+│   └── uv.lock               # exact, reproducible dependency versions
+├── docs/
+│   └── security.md           # how the repository and app are secured
+├── README.md
+└── SECURITY.md               # how to report a vulnerability
 ```
 
 ## Troubleshooting
@@ -131,14 +161,25 @@ resolve to IPv6 `::1`, where the container isn't listening.
 Add your user to the `docker` group (`sudo usermod -aG docker $USER`), then log out
 and back in. A new terminal isn't enough; group membership is set at login.
 
+**Pylance reports `Import "sqlmodel" could not be resolved` after switching branches**
+
+Switching branches changes `uv.lock` but not the installed packages. Run `uv sync`
+from `backend/`.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) to report a vulnerability, and
+[docs/security.md](docs/security.md) for how this project is secured.
+
 ## Roadmap
 
 - [x] FastAPI backend with SQL Server connectivity and health check
-- [ ] Database schema and migrations (Alembic)
+- [x] Tests and CI with GitHub Actions
+- [x] Database schema and migrations (Alembic)
 - [ ] Card data from the Scryfall API
 - [ ] Collection and deck endpoints
 - [ ] Aurelia 2 frontend
-- [ ] Tests and CI with GitHub Actions
 - [ ] Docker Compose and dev container
 - [ ] Azure deployment with infrastructure as code
 - [ ] Architecture decision records
+- [ ] Phone card scanning
