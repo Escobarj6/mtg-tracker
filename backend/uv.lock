@@ -594,6 +594,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi", extra = ["standard-no-fastapi-cloud-cli"] },
+    { name = "httpx" },
     { name = "pydantic-settings" },
     { name = "pyodbc" },
     { name = "sqlalchemy" },
@@ -610,6 +611,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.20.1" },
     { name = "fastapi", extras = ["standard-no-fastapi-cloud-cli"], specifier = ">=0.161.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pydantic-settings", specifier = ">=2.16.1" },
     { name = "pyodbc", specifier = ">=5.3.0" },
     { name = "sqlalchemy", specifier = ">=2.1.6" },
