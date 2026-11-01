@@ -1,7 +1,7 @@
 [project]
 name = "mtg-api"
 version = "0.1.0"
-description = "ackend API for MTG Tracker: collection and Commander deck management."
+description = "backend API for MTG Tracker: collection and Commander deck management."
 readme = "README.md"
 authors = [
     { name = "escobarj", email = "157618076+Escobarj6@users.noreply.github.com" }
