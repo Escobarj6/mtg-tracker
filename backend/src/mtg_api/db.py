@@ -1,9 +1,11 @@
-from sqlalchemy import URL, create_engine
+from functools import lru_cache
 
-from mtg_api.config import settings
+from sqlalchemy import URL, Engine, create_engine
+
+from mtg_api.config import Settings, get_settings
 
 
-def build_url() -> URL:
+def build_url(settings: Settings) -> URL:
     query = {"driver": "ODBC Driver 18 for SQL Server"}
     if settings.db_trust_server_certificate:
         query["TrustServerCertificate"] = "yes"
@@ -19,4 +21,6 @@ def build_url() -> URL:
     )
 
 
-engine = create_engine(build_url(), pool_pre_ping=True)
+@lru_cache
+def get_engine() -> Engine:
+    return create_engine(build_url(get_settings()), pool_pre_ping=True)
