@@ -19,5 +19,5 @@ def health(engine: Annotated[Engine, Depends(get_engine)]) -> dict[str, str]:
             conn.execute(text("SELECT 1"))
     except SQLAlchemyError:
         logger.exception("Database health check failed")
-        raise HTTPException(status_code=503, detail="database unavailable")
+        raise HTTPException(status_code=503, detail="database unavailable") from None
     return {"status": "ok", "database": "available"}

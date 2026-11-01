@@ -1,6 +1,7 @@
+from sqlalchemy import create_engine
+
 from mtg_api.db import get_engine
 from mtg_api.main import app
-from sqlalchemy import create_engine
 
 
 def test_health_ok_when_database_reachable(client):
